@@ -203,8 +203,10 @@
         <label>YTD Net iACV credited so far ($)</label>
         <input type="number" id="ytd" value="0" onInput="calc()">
 
-        <label id="signings-label">Signings Attainment % (CE only)</label>
-        <input type="number" id="signings" value="80" onInput="calc()" id="signings-input">
+        <div id="signings-section">
+          <label>Signings Attainment % (CE only)</label>
+          <input type="number" id="signings" value="80" onInput="calc()">
+        </div>
       </div>
     </div>
 
@@ -476,8 +478,7 @@ function calc() {
   }
 
   const showSignings = role === 'CE';
-  $('signings-label').classList.toggle('hidden', !showSignings);
-  $('signings').closest('input') && ($('signings').parentElement.classList.toggle('hidden', !showSignings));
+  $('signings-section').classList.toggle('hidden', !showSignings);
 
   let html = '';
   if (role === 'CE') {
