@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SCP Compensation Calculator</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface2: #263045;
+    --border: #334155;
+    --accent: #3b82f6;
+    --accent2: #6366f1;
+    --text: #f1f5f9;
+    --text2: #94a3b8;
+    --green: #22c55e;
+    --red: #ef4444;
+    --amber: #f59e0b;
+    --green-bg: #052e16;
+    --red-bg: #2d0a0a;
+    --amber-bg: #2d1a00;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+  header { background: linear-gradient(135deg, #1e3a5f, #1e293b); padding: 20px 32px; border-bottom: 1px solid var(--border); }
+  header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px; }
+  header p { color: var(--text2); font-size: 0.85rem; margin-top: 4px; }
+
+  .tabs { display: flex; gap: 4px; padding: 16px 32px 0; border-bottom: 1px solid var(--border); background: var(--surface); }
+  .tab { padding: 10px 20px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.9rem; font-weight: 500; color: var(--text2); border: 1px solid transparent; border-bottom: none; transition: all .2s; }
+  .tab:hover { color: var(--text); background: var(--surface2); }
+  .tab.active { color: var(--accent); background: var(--bg); border-color: var(--border); }
+
+  .content { padding: 28px 32px; max-width: 1200px; margin: 0 auto; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .card-title { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); margin-bottom: 16px; }
+
+  label { display: block; font-size: 0.82rem; color: var(--text2); margin-bottom: 5px; margin-top: 12px; }
+  label:first-child { margin-top: 0; }
+  input[type=number], input[type=text], select {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    padding: 8px 12px; border-radius: 8px; font-size: 0.9rem; outline: none; transition: border .2s;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  input[type=checkbox] { width: auto; margin-right: 8px; accent-color: var(--accent); transform: scale(1.2); }
+  .check-row { display: flex; align-items: center; margin-top: 12px; font-size: 0.9rem; }
+
+  .metric { padding: 12px 16px; background: var(--surface2); border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+  .metric-label { font-size: 0.82rem; color: var(--text2); }
+  .metric-value { font-size: 1rem; font-weight: 700; }
+  .metric-value.positive { color: var(--green); }
+  .metric-value.negative { color: var(--red); }
+  .metric-value.neutral { color: var(--accent); }
+  .metric-value.amber { color: var(--amber); }
+
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; margin-left: 8px; }
+  .badge-blue { background: #1d3461; color: #93c5fd; }
+  .badge-green { background: #052e16; color: #86efac; }
+  .badge-amber { background: var(--amber-bg); color: #fcd34d; }
+  .badge-red { background: var(--red-bg); color: #fca5a5; }
+  .badge-purple { background: #2d1b69; color: #c4b5fd; }
+
+  .big-metric { text-align: center; padding: 20px; background: var(--surface2); border-radius: 12px; margin-bottom: 12px; }
+  .big-metric .label { font-size: 0.78rem; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; }
+  .big-metric .value { font-size: 2rem; font-weight: 800; margin-top: 4px; }
+
+  .scenario-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 8px; }
+  .scenario-table th { background: var(--surface2); padding: 10px 14px; text-align: left; font-weight: 600; color: var(--text2); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px; }
+  .scenario-table td { padding: 10px 14px; border-top: 1px solid var(--border); }
+  .scenario-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .rr-bar-wrap { height: 28px; background: var(--surface2); border-radius: 8px; overflow: hidden; position: relative; margin: 8px 0; }
+  .rr-bar { height: 100%; border-radius: 8px; transition: width .4s; display: flex; align-items: center; padding-left: 10px; font-size: 0.8rem; font-weight: 700; }
+  .rr-gate-line { position: absolute; top: 0; height: 100%; width: 2px; background: var(--amber); opacity: 0.8; }
+  .rr-gate-label { position: absolute; top: -18px; font-size: 0.72rem; color: var(--amber); }
+
+  .customer-row { display: grid; grid-template-columns: 1fr 130px 130px 36px; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .customer-row input { margin: 0; }
+  .btn { background: var(--accent); color: white; border: none; padding: 8px 18px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: opacity .2s; }
+  .btn:hover { opacity: 0.85; }
+  .btn-sm { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+  .btn-sm:hover { color: var(--red); border-color: var(--red); }
+  .btn-outline { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
+
+  .gate-pass { background: var(--green-bg); border: 1px solid #166534; border-radius: 10px; padding: 14px 20px; text-align: center; }
+  .gate-fail { background: var(--red-bg); border: 1px solid #7f1d1d; border-radius: 10px; padding: 14px 20px; text-align: center; }
+  .gate-pass .gate-label { color: var(--green); font-size: 1.1rem; font-weight: 800; }
+  .gate-fail .gate-label { color: var(--red); font-size: 1.1rem; font-weight: 800; }
+
+  .config-row { display: grid; grid-template-columns: 1fr 160px; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .config-row:last-child { border-bottom: none; }
+  .config-row label { margin: 0; color: var(--text); font-size: 0.88rem; }
+  .config-row input { width: 100%; }
+
+  .section-title { font-size: 1rem; font-weight: 700; margin-bottom: 16px; margin-top: 24px; color: var(--text); }
+  .section-title:first-child { margin-top: 0; }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  .hidden { display: none !important; }
+
+  .payout-breakdown { margin-top: 4px; }
+  .payout-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+  .payout-row:last-child { border-bottom: none; font-weight: 700; font-size: 0.95rem; }
+  .payout-row .payout-label { color: var(--text2); }
+  .payout-row .payout-val { color: var(--text); }
+
+  @media (max-width: 768px) {
+    .grid2, .grid3 { grid-template-columns: 1fr; }
+    .content { padding: 16px; }
+    .tabs { padding: 12px 16px 0; }
+    header { padding: 16px; }
+    .customer-row { grid-template-columns: 1fr 100px 100px 36px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>SCP Compensation Calculator</h1>
+  <p>Net iACV + Renewal Rate Model &mdash; v2.1 &mdash; April 2026</p>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('deal')">Deal Calculator</div>
+  <div class="tab" onclick="switchTab('rr')">Renewal Rate</div>
+  <div class="tab" onclick="switchTab('config')">Config</div>
+</div>
+
+<!-- ===== TAB 1: DEAL CALCULATOR ===== -->
+<div class="content">
+<div id="panel-deal" class="panel active">
+  <div class="grid2">
+
+    <!-- LEFT: INPUTS -->
+    <div>
+      <div class="card">
+        <div class="card-title">Deal Inputs</div>
+
+        <label>Role</label>
+        <select id="role" onchange="calc()">
+          <option value="CE">CE — Client Executive (Partnership)</option>
+          <option value="SE">SE — Sales Executive (Partnership)</option>
+          <option value="COOP">SE — Cooperation (100% iACV)</option>
+        </select>
+
+        <label>OTE ($)</label>
+        <input type="number" id="ote" value="200000" onInput="calc()">
+
+        <label>Quota ($)</label>
+        <input type="number" id="quota" value="500000" onInput="calc()">
+
+        <label>Deal Type</label>
+        <select id="dealType" onchange="togglePrior(); calc()">
+          <option value="newlogo">New Logo</option>
+          <option value="renewal">Renewal / Upsell</option>
+          <option value="bridge">Bridge</option>
+        </select>
+
+        <label>TCV ($)</label>
+        <input type="number" id="tcv" value="120000" onInput="calc()">
+
+        <label>Duration (months)</label>
+        <select id="dur" onchange="calc()">
+          <option value="3">3 months</option>
+          <option value="6">6 months</option>
+          <option value="9">9 months</option>
+          <option value="12" selected>12 months</option>
+          <option value="18">18 months</option>
+          <option value="24">24 months</option>
+          <option value="36">36 months</option>
+        </select>
+
+        <div id="prior-section">
+          <label>Prior TCV ($)</label>
+          <input type="number" id="priorTcv" value="100000" onInput="calc()">
+
+          <label>Prior Duration (months)</label>
+          <select id="priorDur" onchange="calc()">
+            <option value="3">3 months</option>
+            <option value="6">6 months</option>
+            <option value="9">9 months</option>
+            <option value="12" selected>12 months</option>
+            <option value="18">18 months</option>
+            <option value="24">24 months</option>
+            <option value="36">36 months</option>
+          </select>
+        </div>
+
+        <div class="check-row">
+          <input type="checkbox" id="cloud" onchange="calc()">
+          <label style="margin:0">Cloud deal (×1.2 kicker)</label>
+        </div>
+
+        <label>YTD Net iACV credited so far ($)</label>
+        <input type="number" id="ytd" value="0" onInput="calc()">
+
+        <label id="signings-label">Signings Attainment % (CE only)</label>
+        <input type="number" id="signings" value="80" onInput="calc()" id="signings-input">
+      </div>
+    </div>
+
+    <!-- RIGHT: OUTPUTS -->
+    <div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">Deal Metrics</div>
+        <div class="metric"><span class="metric-label">New ACV</span><span class="metric-value neutral" id="out-acv">—</span></div>
+        <div class="metric"><span class="metric-label">PAR ACV</span><span class="metric-value neutral" id="out-par">—</span></div>
+        <div class="metric">
+          <span class="metric-label">Net iACV (raw)</span>
+          <span><span class="metric-value" id="out-net">—</span><span id="kicker-badge" class="badge badge-blue" style="display:none"></span></span>
+        </div>
+        <div class="metric"><span class="metric-label">Net iACV (credited)</span><span class="metric-value" id="out-credited">—</span></div>
+        <div class="metric"><span class="metric-label">YTD after this deal</span><span class="metric-value neutral" id="out-ytd-after">—</span></div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">Attainment &amp; Payout</div>
+        <div class="grid2" style="gap:10px;margin-bottom:12px">
+          <div class="big-metric">
+            <div class="label">Attainment</div>
+            <div class="value" id="out-att" style="color:var(--accent)">0%</div>
+          </div>
+          <div class="big-metric">
+            <div class="label">Accelerator</div>
+            <div class="value" id="out-acc" style="color:var(--accent2)">×1.0</div>
+          </div>
+        </div>
+        <div class="payout-breakdown" id="payout-breakdown"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCENARIO COMPARISON -->
+  <div class="card" style="margin-top:20px">
+    <div class="card-title">Scenario Comparison — Same TCV, Different Duration</div>
+    <table class="scenario-table" id="scenario-table">
+      <thead>
+        <tr>
+          <th>Duration</th><th>ACV</th><th>Net iACV</th><th>Kicker</th><th>Credited iACV</th><th>Attainment</th><th>iACV Payout</th>
+        </tr>
+      </thead>
+      <tbody id="scenario-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ===== TAB 2: RENEWAL RATE ===== -->
+<div id="panel-rr" class="panel">
+  <div class="grid2">
+    <div>
+      <div class="card">
+        <div class="card-title">Territory Customers</div>
+        <div style="display:grid;grid-template-columns:1fr 130px 130px 36px;gap:8px;margin-bottom:6px">
+          <span style="font-size:0.75rem;color:var(--text2)">Customer</span>
+          <span style="font-size:0.75rem;color:var(--text2)">PAR ACV (Jan 1)</span>
+          <span style="font-size:0.75rem;color:var(--text2)">ACV Dec 31</span>
+          <span></span>
+        </div>
+        <div id="customers-list"></div>
+        <button class="btn btn-outline" onclick="addCustomer()" style="margin-top:12px;width:100%">+ Add Customer</button>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="card-title">RR Payout Inputs</div>
+        <label>OTE ($)</label>
+        <input type="number" id="rr-ote" value="200000" onInput="calcRR()">
+        <label>Role</label>
+        <select id="rr-role" onchange="calcRR()">
+          <option value="CE">CE (RR weight 20%)</option>
+          <option value="SE">SE (RR weight 20%)</option>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">Renewal Rate</div>
+        <div style="position:relative;margin-bottom:24px;padding-top:20px">
+          <div style="position:relative">
+            <span class="rr-gate-label" id="rr-gate-label" style="left:85%">90% gate</span>
+            <div class="rr-bar-wrap">
+              <div class="rr-bar" id="rr-bar" style="width:0%;background:var(--green)"></div>
+              <div class="rr-gate-line" id="rr-gate-line" style="left:90%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="metric"><span class="metric-label">Total PAR ACV (denominator)</span><span class="metric-value neutral" id="rr-par-total">$0</span></div>
+        <div class="metric"><span class="metric-label">Total ACV active Dec 31</span><span class="metric-value neutral" id="rr-act-total">$0</span></div>
+        <div class="metric"><span class="metric-label">Renewal Rate</span><span class="metric-value" id="rr-pct">0%</span></div>
+        <div id="rr-gate-box" style="margin-top:12px"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">RR Bucket Payout</div>
+        <div class="metric"><span class="metric-label">RR Bucket OTE</span><span class="metric-value neutral" id="rr-bucket-ote">—</span></div>
+        <div class="metric"><span class="metric-label">RR Attainment (linear 90–100%)</span><span class="metric-value neutral" id="rr-bucket-att">—</span></div>
+        <div class="metric"><span class="metric-label">RR Bucket Payout</span><span class="metric-value" id="rr-bucket-payout">—</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TAB 3: CONFIG ===== -->
+<div id="panel-config" class="panel">
+  <div class="grid2">
+    <div>
+      <div class="card">
+        <div class="card-title">Kickers &amp; Rules</div>
+        <div class="config-row"><label>Grace period (days)</label><input type="number" id="cfg-grace" value="15" onInput="calc();calcRR()"></div>
+        <div class="config-row"><label>MY kicker — 2yr</label><input type="number" id="cfg-my2" value="1.05" step="0.01" onInput="calc()"></div>
+        <div class="config-row"><label>MY kicker — 3yr</label><input type="number" id="cfg-my3" value="1.20" step="0.01" onInput="calc()"></div>
+        <div class="config-row"><label>Cloud kicker</label><input type="number" id="cfg-cloud" value="1.20" step="0.01" onInput="calc()"></div>
+        <div class="config-row"><label>Annual bridge cap (months)</label><input type="number" id="cfg-cap" value="12" onInput="calc()"></div>
+        <div class="config-row"><label>RR gate threshold (%)</label><input type="number" id="cfg-rr-gate" value="90" onInput="calc();calcRR()"></div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">Accelerators</div>
+        <div class="config-row"><label>Tier 1 cap (%)</label><input type="number" id="cfg-t1cap" value="100" onInput="calc()"></div>
+        <div class="config-row"><label>Tier 2 cap (%)</label><input type="number" id="cfg-t2cap" value="150" onInput="calc()"></div>
+        <div class="config-row"><label>Tier 1 rate (×)</label><input type="number" id="cfg-t1rate" value="1.0" step="0.1" onInput="calc()"></div>
+        <div class="config-row"><label>Tier 2 rate (×)</label><input type="number" id="cfg-t2rate" value="2.0" step="0.1" onInput="calc()"></div>
+        <div class="config-row"><label>Tier 3 rate (×)</label><input type="number" id="cfg-t3rate" value="3.0" step="0.1" onInput="calc()"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Credit Splits</div>
+        <div class="config-row"><label>CE iACV weight (%)</label><input type="number" id="cfg-ce-iacv" value="70" onInput="calc()"></div>
+        <div class="config-row"><label>CE RR weight (%)</label><input type="number" id="cfg-ce-rr" value="20" onInput="calc()"></div>
+        <div class="config-row"><label>CE Signings weight (%)</label><input type="number" id="cfg-ce-sig" value="10" onInput="calc()"></div>
+        <div class="config-row"><label>SE iACV weight (%)</label><input type="number" id="cfg-se-iacv" value="80" onInput="calc()"></div>
+        <div class="config-row"><label>SE RR weight (%)</label><input type="number" id="cfg-se-rr" value="20" onInput="calc()"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div><!-- end .content -->
+
+<script>
+// ── Utilities ──────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const fmt = n => isNaN(n) ? '—' : '$' + Math.round(n).toLocaleString('en-US');
+const fmtPct = n => isNaN(n) ? '—' : (n * 100).toFixed(1) + '%';
+const fmtX = n => '×' + parseFloat(n).toFixed(2).replace(/\.?0+$/, '');
+
+function getN(id) { return parseFloat($(id).value) || 0; }
+
+function cfg() {
+  return {
+    my2:    getN('cfg-my2'),
+    my3:    getN('cfg-my3'),
+    cloud:  getN('cfg-cloud'),
+    rrGate: getN('cfg-rr-gate') / 100,
+    t1cap:  getN('cfg-t1cap') / 100,
+    t2cap:  getN('cfg-t2cap') / 100,
+    t1rate: getN('cfg-t1rate'),
+    t2rate: getN('cfg-t2rate'),
+    t3rate: getN('cfg-t3rate'),
+    ceIacv: getN('cfg-ce-iacv') / 100,
+    ceRr:   getN('cfg-ce-rr') / 100,
+    ceSig:  getN('cfg-ce-sig') / 100,
+    seIacv: getN('cfg-se-iacv') / 100,
+    seRr:   getN('cfg-se-rr') / 100,
+  };
+}
+
+function acv(tcv, months) { return months > 0 ? tcv / months * 12 : 0; }
+
+function kicker(dur, isCloud, netIacv, c) {
+  if (netIacv < 0) return 1.0;
+  let k = 1.0;
+  if (dur >= 36) k = c.my3;
+  else if (dur >= 24) k = c.my2;
+  if (isCloud) k *= c.cloud;
+  return k;
+}
+
+function acceleratorPayout(attainment, c) {
+  const t1 = c.t1cap, t2 = c.t2cap;
+  if (attainment <= t1) return attainment * c.t1rate;
+  if (attainment <= t2) return t1 * c.t1rate + (attainment - t1) * c.t2rate;
+  return t1 * c.t1rate + (t2 - t1) * c.t2rate + (attainment - t2) * c.t3rate;
+}
+
+function accelLabel(att, c) {
+  if (att <= c.t1cap) return '×' + c.t1rate.toFixed(1);
+  if (att <= c.t2cap) return '×' + c.t2rate.toFixed(1);
+  return '×' + c.t3rate.toFixed(1);
+}
+
+// ── Tab 1: Deal Calculator ──────────────────────────────────────────────────
+function togglePrior() {
+  const dt = $('dealType').value;
+  $('prior-section').classList.toggle('hidden', dt === 'newlogo');
+}
+
+function calc() {
+  const c = cfg();
+  const role    = $('role').value;
+  const ote     = getN('ote');
+  const quota   = getN('quota');
+  const tcv     = getN('tcv');
+  const dur     = parseInt($('dur').value);
+  const isCloud = $('cloud').checked;
+  const ytdBefore = getN('ytd');
+  const dt      = $('dealType').value;
+  const signattsRaw = getN('signings') / 100;
+
+  // PAR ACV
+  let parAcv = 0;
+  if (dt !== 'newlogo') {
+    const pTcv = getN('priorTcv');
+    const pDur = parseInt($('priorDur').value);
+    parAcv = acv(pTcv, pDur);
+  }
+
+  const newAcv = acv(tcv, dur);
+  const netRaw = newAcv - parAcv;
+  const k = kicker(dur, isCloud, netRaw, c);
+  const credited = netRaw >= 0 ? netRaw * k : netRaw;
+  const ytdAfter = ytdBefore + credited;
+  const attainment = quota > 0 ? Math.max(0, ytdAfter) / quota : 0;
+
+  // Kicker badge
+  const kb = $('kicker-badge');
+  if (netRaw >= 0 && k > 1.001) {
+    kb.style.display = 'inline-block';
+    let label = '';
+    if (dur >= 36 && isCloud) label = '3yr+Cloud ×' + k.toFixed(2);
+    else if (dur >= 24 && isCloud) label = '2yr+Cloud ×' + k.toFixed(2);
+    else if (dur >= 36) label = '3yr ×' + c.my3.toFixed(2);
+    else if (dur >= 24) label = '2yr ×' + c.my2.toFixed(2);
+    else if (isCloud) label = 'Cloud ×' + c.cloud.toFixed(2);
+    kb.textContent = label;
+    kb.className = 'badge ' + (isCloud ? 'badge-purple' : 'badge-green');
+  } else {
+    kb.style.display = 'none';
+  }
+
+  // Outputs
+  $('out-acv').textContent = fmt(newAcv);
+  $('out-par').textContent = fmt(parAcv);
+  const netEl = $('out-net');
+  netEl.textContent = fmt(netRaw);
+  netEl.className = 'metric-value ' + (netRaw > 0 ? 'positive' : netRaw < 0 ? 'negative' : 'neutral');
+  const credEl = $('out-credited');
+  credEl.textContent = fmt(credited);
+  credEl.className = 'metric-value ' + (credited > 0 ? 'positive' : credited < 0 ? 'negative' : 'neutral');
+  $('out-ytd-after').textContent = fmt(ytdAfter);
+  $('out-att').textContent = fmtPct(attainment);
+  $('out-att').style.color = attainment >= 1.5 ? 'var(--green)' : attainment >= 1 ? 'var(--accent2)' : 'var(--accent)';
+  $('out-acc').textContent = accelLabel(attainment, c);
+
+  // Payout breakdown
+  let iacvW, rrW, sigW;
+  if (role === 'CE') { iacvW = c.ceIacv; rrW = c.ceRr; sigW = c.ceSig; }
+  else if (role === 'SE') { iacvW = c.seIacv; rrW = c.seRr; sigW = 0; }
+  else { iacvW = 1.0; rrW = 0; sigW = 0; } // COOP
+
+  const accPayout = acceleratorPayout(attainment, c);
+  const iacvPayout = ote * iacvW * accPayout;
+
+  // Signings (CE only, linear 0-100%, ×2 above 100%, cap 200%)
+  let sigsPayout = 0;
+  if (role === 'CE') {
+    const sigAtt = Math.min(2, signattsRaw <= 1 ? signattsRaw : 1 + (signattsRaw - 1) * 2);
+    sigsPayout = ote * sigW * Math.min(sigAtt, 2);
+  }
+
+  const showSignings = role === 'CE';
+  $('signings-label').classList.toggle('hidden', !showSignings);
+  $('signings').closest('input') && ($('signings').parentElement.classList.toggle('hidden', !showSignings));
+
+  let html = '';
+  if (role === 'CE') {
+    html += `<div class="payout-row"><span class="payout-label">iACV bucket (70%)</span><span class="payout-val">${fmt(iacvPayout)}</span></div>`;
+    html += `<div class="payout-row"><span class="payout-label">RR bucket (20%) — see RR tab</span><span class="payout-val">—</span></div>`;
+    html += `<div class="payout-row"><span class="payout-label">Signings bucket (10%)</span><span class="payout-val">${fmt(sigsPayout)}</span></div>`;
+    html += `<div class="payout-row"><span class="payout-label">Total (excl. RR)</span><span class="payout-val positive">${fmt(iacvPayout + sigsPayout)}</span></div>`;
+  } else if (role === 'SE') {
+    html += `<div class="payout-row"><span class="payout-label">iACV bucket (80%)</span><span class="payout-val">${fmt(iacvPayout)}</span></div>`;
+    html += `<div class="payout-row"><span class="payout-label">RR bucket (20%) — see RR tab</span><span class="payout-val">—</span></div>`;
+    html += `<div class="payout-row"><span class="payout-label">Total (excl. RR)</span><span class="payout-val positive">${fmt(iacvPayout)}</span></div>`;
+  } else {
+    html += `<div class="payout-row"><span class="payout-label">iACV credit (100% — Cooperation)</span><span class="payout-val">${fmt(iacvPayout)}</span></div>`;
+    html += `<div class="payout-row"><span class="payout-label">Total</span><span class="payout-val positive">${fmt(iacvPayout)}</span></div>`;
+  }
+  $('payout-breakdown').innerHTML = html;
+
+  // Scenario comparison
+  buildScenario(newAcv, parAcv, tcv, isCloud, ytdBefore, quota, ote, iacvW, c);
+}
+
+function buildScenario(newAcv, parAcv, tcv, isCloud, ytdBefore, quota, ote, iacvW, c) {
+  const durations = [12, 24, 36];
+  const labels = ['12M (Standard)', '24M (Multi-year)', '36M (Multi-year)'];
+  let html = '';
+  durations.forEach((d, i) => {
+    const a = acv(tcv, d);
+    const net = a - parAcv;
+    const k = kicker(d, isCloud, net, c);
+    const cred = net >= 0 ? net * k : net;
+    const ytdA = ytdBefore + cred;
+    const att = quota > 0 ? Math.max(0, ytdA) / quota : 0;
+    const accP = acceleratorPayout(att, c);
+    const payout = ote * iacvW * accP;
+    const kLabel = (net >= 0 && k > 1.001) ? fmtX(k) : '×1.0';
+    const netCls = net > 0 ? 'positive' : net < 0 ? 'negative' : '';
+    html += `<tr>
+      <td>${labels[i]}</td>
+      <td>${fmt(a)}</td>
+      <td class="${netCls}">${fmt(net)}</td>
+      <td>${kLabel}</td>
+      <td>${fmt(cred)}</td>
+      <td>${fmtPct(att)}</td>
+      <td>${fmt(payout)}</td>
+    </tr>`;
+  });
+  $('scenario-body').innerHTML = html;
+  // color cells
+  $('scenario-body').querySelectorAll('.positive').forEach(el => el.style.color = 'var(--green)');
+  $('scenario-body').querySelectorAll('.negative').forEach(el => el.style.color = 'var(--red)');
+}
+
+// ── Tab 2: Renewal Rate ─────────────────────────────────────────────────────
+let customers = [
+  { name: 'Client A', par: 100000, dec: 95000 },
+  { name: 'Client B', par: 80000, dec: 80000 },
+  { name: 'Client C', par: 60000, dec: 0 },
+];
+
+function renderCustomers() {
+  let html = '';
+  customers.forEach((c, i) => {
+    html += `<div class="customer-row">
+      <input type="text" value="${c.name}" onInput="customers[${i}].name=this.value" placeholder="Customer name">
+      <input type="number" value="${c.par}" onInput="customers[${i}].par=parseFloat(this.value)||0;calcRR()" placeholder="PAR ACV">
+      <input type="number" value="${c.dec}" onInput="customers[${i}].dec=parseFloat(this.value)||0;calcRR()" placeholder="Dec 31 ACV">
+      <button class="btn-sm" onclick="removeCustomer(${i})">✕</button>
+    </div>`;
+  });
+  $('customers-list').innerHTML = html;
+  calcRR();
+}
+
+function addCustomer() {
+  customers.push({ name: 'New Customer', par: 0, dec: 0 });
+  renderCustomers();
+}
+
+function removeCustomer(i) {
+  customers.splice(i, 1);
+  renderCustomers();
+}
+
+function calcRR() {
+  const c = cfg();
+  const totalPar = customers.reduce((s, c) => s + c.par, 0);
+  const totalDec = customers.reduce((s, c) => s + c.dec, 0);
+  const rr = totalPar > 0 ? totalDec / totalPar : 0;
+
+  $('rr-par-total').textContent = fmt(totalPar);
+  $('rr-act-total').textContent = fmt(totalDec);
+  const rrEl = $('rr-pct');
+  rrEl.textContent = fmtPct(rr);
+  rrEl.className = 'metric-value ' + (rr >= c.rrGate ? 'positive' : 'negative');
+
+  // Bar
+  const barPct = Math.min(100, rr * 100);
+  const bar = $('rr-bar');
+  bar.style.width = barPct + '%';
+  bar.style.background = rr >= c.rrGate ? 'var(--green)' : 'var(--red)';
+  bar.textContent = fmtPct(rr);
+  $('rr-gate-line').style.left = (c.rrGate * 100) + '%';
+  $('rr-gate-label').style.left = 'calc(' + (c.rrGate * 100) + '% - 30px)';
+  $('rr-gate-label').textContent = (c.rrGate * 100).toFixed(0) + '% gate';
+
+  // Gate box
+  const gateBox = $('rr-gate-box');
+  if (rr >= c.rrGate) {
+    gateBox.innerHTML = '<div class="gate-pass"><div class="gate-label">✓ GATE PASS</div><div style="color:var(--green);font-size:0.82rem;margin-top:4px">RR ≥ ' + (c.rrGate*100).toFixed(0) + '% — RR bucket enabled</div></div>';
+  } else {
+    gateBox.innerHTML = '<div class="gate-fail"><div class="gate-label">✗ GATE FAIL</div><div style="color:var(--red);font-size:0.82rem;margin-top:4px">RR < ' + (c.rrGate*100).toFixed(0) + '% — RR bucket = $0</div></div>';
+  }
+
+  // Payout
+  const ote = getN('rr-ote');
+  const rrRole = $('rr-role').value;
+  const rrW = rrRole === 'CE' ? c.ceRr : c.seRr;
+  const bucketOte = ote * rrW;
+  const rrAtt = rr >= c.rrGate ? Math.min(1, (rr - c.rrGate) / (1 - c.rrGate)) : 0;
+  const rrPayout = bucketOte * rrAtt;
+
+  $('rr-bucket-ote').textContent = fmt(bucketOte);
+  $('rr-bucket-att').textContent = fmtPct(rrAtt);
+  const rpEl = $('rr-bucket-payout');
+  rpEl.textContent = fmt(rrPayout);
+  rpEl.className = 'metric-value ' + (rr >= c.rrGate ? 'positive' : 'negative');
+}
+
+// ── Tabs ────────────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    const names = ['deal', 'rr', 'config'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  $('panel-' + name).classList.add('active');
+}
+
+// ── Init ────────────────────────────────────────────────────────────────────
+togglePrior();
+calc();
+renderCustomers();
+</script>
+</body>
+</html>
