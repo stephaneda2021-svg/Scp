@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Idea Intake Form</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface2: #263045;
+    --border: #334155;
+    --accent: #3b82f6;
+    --accent2: #6366f1;
+    --text: #f1f5f9;
+    --text2: #94a3b8;
+    --green: #22c55e;
+    --red: #ef4444;
+    --amber: #f59e0b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+  header { background: linear-gradient(135deg, #1e3a5f, #1e293b); padding: 20px 32px; border-bottom: 1px solid var(--border); }
+  header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px; }
+  header p { color: var(--text2); font-size: 0.85rem; margin-top: 4px; }
+
+  .content { padding: 28px 32px; max-width: 980px; margin: 0 auto; }
+
+  form { display: grid; gap: 20px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .card-title { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin-bottom: 16px; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .grid2 { grid-template-columns: 1fr; } }
+
+  label { display: block; font-size: 0.82rem; color: var(--text2); margin-bottom: 5px; margin-top: 14px; font-weight: 500; }
+  .field:first-child label, .grid2 .field label { margin-top: 0; }
+  .req::after { content: " *"; color: var(--red); }
+
+  input[type=text], input[type=number], textarea, select {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    padding: 9px 12px; border-radius: 8px; font-size: 0.9rem; outline: none; transition: border .2s;
+    font-family: inherit; resize: vertical;
+  }
+  textarea { min-height: 72px; line-height: 1.5; }
+  input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+  input:invalid, textarea:invalid { box-shadow: none; }
+  .hint { font-size: 0.72rem; color: var(--text2); margin-top: 4px; opacity: 0.8; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  .chip { position: relative; }
+  .chip input { position: absolute; opacity: 0; pointer-events: none; }
+  .chip span {
+    display: inline-block; padding: 6px 12px; border: 1px solid var(--border); border-radius: 20px;
+    font-size: 0.82rem; cursor: pointer; color: var(--text2); background: var(--surface2); transition: all .15s; user-select: none;
+  }
+  .chip input:checked + span { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .chip input:focus-visible + span { outline: 2px solid var(--accent2); outline-offset: 2px; }
+
+  .actions { display: flex; gap: 12px; flex-wrap: wrap; padding-top: 4px; }
+  button { font-family: inherit; font-size: 0.9rem; font-weight: 600; padding: 11px 22px; border-radius: 8px; cursor: pointer; border: 1px solid transparent; transition: all .15s; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #2563eb; }
+  .btn-ghost { background: transparent; color: var(--text2); border-color: var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--text2); }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(120%);
+    background: var(--green); color: #052e16; padding: 12px 24px; border-radius: 10px; font-weight: 600;
+    font-size: 0.88rem; transition: transform .3s; z-index: 50; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  @media print {
+    body { background: #fff; color: #000; }
+    header { background: #fff; border-color: #ccc; }
+    .card { background: #fff; border-color: #ccc; }
+    .actions { display: none; }
+    .chip input:checked + span { background: #000; color: #fff; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>AI Idea Intake Form</h1>
+  <p>Submit a Tax AI idea — capture the process, data, objective and success criteria.</p>
+</header>
+
+<div class="content">
+  <form id="aiForm" novalidate>
+
+    <!-- 1. General Information -->
+    <section class="card">
+      <div class="card-title">General Information</div>
+      <div class="grid2">
+        <div class="field">
+          <label class="req" for="title">Title</label>
+          <input type="text" id="title" name="title" required placeholder="Short name of the idea">
+        </div>
+        <div class="field">
+          <label class="req" for="requester">Requester</label>
+          <input type="text" id="requester" name="requester" required placeholder="Name / team">
+        </div>
+        <div class="field">
+          <label for="geo">GEO (Region involved)</label>
+          <input type="text" id="geo" name="geo" placeholder="e.g. EMEA, France, APAC">
+        </div>
+        <div class="field">
+          <label for="taxDomain">Tax Domain</label>
+          <input type="text" id="taxDomain" name="taxDomain" placeholder="VAT, GST, WHT…">
+        </div>
+      </div>
+      <label for="currentProcess">Description of current process (Step-by-Step, Flow)</label>
+      <textarea id="currentProcess" name="currentProcess" placeholder="Describe how the process works today…"></textarea>
+    </section>
+
+    <!-- 2. AI Idea Classification -->
+    <section class="card">
+      <div class="card-title">AI Idea Classification</div>
+
+      <label>Classification</label>
+      <div class="chips" data-group="classification">
+        <label class="chip"><input type="checkbox" name="classification" value="Extraction"><span>Extraction</span></label>
+        <label class="chip"><input type="checkbox" name="classification" value="Classification"><span>Classification</span></label>
+        <label class="chip"><input type="checkbox" name="classification" value="Calculation"><span>Calculation</span></label>
+        <label class="chip"><input type="checkbox" name="classification" value="Validation"><span>Validation</span></label>
+        <label class="chip"><input type="checkbox" name="classification" value="Anomaly detection"><span>Anomaly detection</span></label>
+        <label class="chip"><input type="checkbox" name="classification" value="Reporting"><span>Reporting</span></label>
+        <label class="chip"><input type="checkbox" name="classification" value="Other"><span>Other</span></label>
+      </div>
+
+      <label for="painPoints">Main pain points (errors, delays, manual work…)</label>
+      <textarea id="painPoints" name="painPoints" placeholder="What hurts in the current process?"></textarea>
+
+      <div class="grid2">
+        <div class="field">
+          <label for="inputDocs">Input documents</label>
+          <input type="text" id="inputDocs" name="inputDocs" placeholder="Excel, PDF invoices, email, XML…">
+        </div>
+        <div class="field">
+          <label for="keyData">Key data to extract</label>
+          <input type="text" id="keyData" name="keyData" placeholder="Supplier/customer, VAT ID, tax rate, amount…">
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. AI Objective & Output -->
+    <section class="card">
+      <div class="card-title">AI Objective &amp; Output</div>
+
+      <label>AI main objective</label>
+      <div class="chips" data-group="objective">
+        <label class="chip"><input type="checkbox" name="objective" value="Extract"><span>Extract</span></label>
+        <label class="chip"><input type="checkbox" name="objective" value="Classify"><span>Classify</span></label>
+        <label class="chip"><input type="checkbox" name="objective" value="Calculate"><span>Calculate</span></label>
+        <label class="chip"><input type="checkbox" name="objective" value="Validate"><span>Validate</span></label>
+        <label class="chip"><input type="checkbox" name="objective" value="Detect anomalies"><span>Detect anomalies</span></label>
+      </div>
+
+      <label for="expectedOutput">Expected AI output</label>
+      <textarea id="expectedOutput" name="expectedOutput" placeholder="Corrected invoice, report, VAT calculation…"></textarea>
+
+      <label for="humanValidation">Human validation needed?</label>
+      <select id="humanValidation" name="humanValidation">
+        <option value="">— Select —</option>
+        <option value="None">None (fully automated)</option>
+        <option value="Spot check">Spot check / sampling</option>
+        <option value="Review all">Review all outputs</option>
+        <option value="Approve before action">Approval required before action</option>
+      </select>
+
+      <label for="taxRules">Main tax rules involved</label>
+      <textarea id="taxRules" name="taxRules" placeholder="Reverse charge, place of supply, local VAT rules…"></textarea>
+    </section>
+
+    <!-- 4. Volume & KPIs -->
+    <section class="card">
+      <div class="card-title">Volume &amp; Indicators</div>
+      <div class="grid2">
+        <div class="field">
+          <label for="frequency">Frequency / Volume</label>
+          <input type="text" id="frequency" name="frequency" placeholder="e.g. Monthly / 500 units">
+        </div>
+        <div class="field">
+          <label for="kpi">Key process indicators</label>
+          <input type="text" id="kpi" name="kpi" placeholder="Current metrics (cycle time, error rate…)">
+        </div>
+      </div>
+      <label for="successIndicators">Potential success indicators</label>
+      <textarea id="successIndicators" name="successIndicators" placeholder="How will we measure success? (time saved, accuracy %, $ impact…)"></textarea>
+    </section>
+
+    <div class="actions">
+      <button type="submit" class="btn-primary">Submit &amp; Export JSON</button>
+      <button type="button" class="btn-ghost" id="saveBtn">Save draft</button>
+      <button type="button" class="btn-ghost" id="printBtn">Print / PDF</button>
+      <button type="button" class="btn-ghost" id="resetBtn">Clear</button>
+    </div>
+  </form>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  const form = document.getElementById('aiForm');
+  const STORAGE_KEY = 'aiIdeaDraft';
+
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('show'), 2400);
+  }
+
+  // Collect form data into a plain object (checkbox groups become arrays).
+  function collect() {
+    const data = {};
+    new FormData(form).forEach((value, key) => {
+      if (data[key] !== undefined) {
+        if (!Array.isArray(data[key])) data[key] = [data[key]];
+        data[key].push(value);
+      } else {
+        data[key] = value;
+      }
+    });
+    return data;
+  }
+
+  // Restore a saved object back into the form.
+  function apply(data) {
+    Object.entries(data).forEach(([key, value]) => {
+      const fields = form.querySelectorAll('[name="' + key + '"]');
+      fields.forEach(el => {
+        if (el.type === 'checkbox') {
+          const vals = Array.isArray(value) ? value : [value];
+          el.checked = vals.includes(el.value);
+        } else {
+          el.value = value;
+        }
+      });
+    });
+  }
+
+  function saveDraft(silent) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(collect()));
+    if (!silent) toast('Draft saved');
+  }
+
+  // Load any existing draft on open.
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) apply(JSON.parse(saved));
+  } catch (e) { /* ignore corrupt draft */ }
+
+  // Auto-save on every change.
+  form.addEventListener('input', () => saveDraft(true));
+  form.addEventListener('change', () => saveDraft(true));
+
+  document.getElementById('saveBtn').addEventListener('click', () => saveDraft(false));
+  document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    if (confirm('Clear the form and delete the saved draft?')) {
+      form.reset();
+      localStorage.removeItem(STORAGE_KEY);
+      toast('Cleared');
+    }
+  });
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+    const payload = { submittedAt: new Date().toISOString(), ...collect() };
+
+    // Download as JSON file — ready to send to a backend / API.
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const safe = (payload.title || 'ai-idea').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+    a.href = url;
+    a.download = safe + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+
+    saveDraft(true);
+    toast('Submitted — JSON exported');
+
+    /* To send to your own API instead of downloading, replace the block above with:
+       fetch('/api/ai-ideas', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify(payload)
+       });
+    */
+  });
+})();
+</script>
+</body>
+</html>
